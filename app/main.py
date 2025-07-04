@@ -7,6 +7,7 @@ from tqdm import tqdm
 
 from constants import BASE_DIR, MAIN_DOC_URL
 from configs import configure_argument_parser
+from outputs import control_output
 
 
 def whats_new(session):
@@ -19,13 +20,7 @@ def whats_new(session):
     div_with_ul = main_div.find('div', attrs={'class': 'toctree-wrapper'})
     sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
 
-    # for section in sections_by_python:
-    #     version_a_tag = section.find('a')
-    #     href = version_a_tag['href']
-    #     version_link = urljoin(WHATS_NEW_URL, href)
-    #     print(version_link)
-
-    results = []
+    results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
         href = version_a_tag['href']
@@ -40,8 +35,7 @@ def whats_new(session):
         dl_text = dl.text.replace('\n', ' ')
         results.append((version_link, h1_text, dl_text))
 
-    for row in results:
-        print(*row)
+    return results
 
 def latest_versions(session):
     response = session.get(MAIN_DOC_URL)
@@ -58,7 +52,7 @@ def latest_versions(session):
         else:
             raise Exception('Ничего не нашлось')
 
-    results = []
+    results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
     for a_tag in a_tags:
         link = a_tag['href']
@@ -70,8 +64,7 @@ def latest_versions(session):
         results.append(
             (link, version, status)
         )
-    for row in results:
-        print(*row)
+    return results
 
 def download(session):
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
@@ -90,7 +83,9 @@ def main():
     if args.clear_cache:
         session.cache.clear()
     parser_mode = args.mode
-    MODE_TO_FUNCTION[parser_mode](session)
+    results = MODE_TO_FUNCTION[parser_mode](session)
+    if results is not None:
+        control_output(results, args)
 
 
 if __name__ == '__main__':
