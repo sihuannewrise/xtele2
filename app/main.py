@@ -9,41 +9,46 @@ from tqdm import tqdm
 from constants import BASE_DIR, MAIN_DOC_URL
 from configs import configure_argument_parser, configure_logging
 from outputs import control_output
+from utils import get_response, find_tag
 
 
 def whats_new(session):
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    response = session.get(whats_new_url)
-    response.encoding = 'utf-8'
+    response = get_response(session, whats_new_url)
+    if response is None:
+        return
 
     soup = BeautifulSoup(response.text, features='lxml')
-    main_div = soup.find('section', attrs={'id': 'what-s-new-in-python'})
-    div_with_ul = main_div.find('div', attrs={'class': 'toctree-wrapper'})
+    main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
+    div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper'})
     sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
 
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     for section in tqdm(sections_by_python):
-        version_a_tag = section.find('a')
+        version_a_tag = find_tag(section, 'a')
         href = version_a_tag['href']
         version_link = urljoin(whats_new_url, href)
 
-        response = session.get(version_link)
-        response.encoding = 'utf-8'
+        response = get_response(session, version_link)
+        if response is None:
+            continue
+
         soup = BeautifulSoup(response.text, features='lxml')
-        h1 = soup.find('h1')
+        h1 = find_tag(soup, 'h1')
         h1_text = h1.text[:-1]
-        dl = soup.find('dl')
+        dl = find_tag(soup, 'dl')
         dl_text = dl.text.strip().replace('\n', ' ')
         results.append((version_link, h1_text, dl_text))
 
     return results
 
 def latest_versions(session):
-    response = session.get(MAIN_DOC_URL)
-    response.encoding = 'utf-8'
-    soup = BeautifulSoup(response.text, 'lxml')
+    response = get_response(session, MAIN_DOC_URL)
+    if response is None:
+        return
 
-    sidebar = soup.find('div', {'class': 'sphinxsidebarwrapper'})
+    soup = BeautifulSoup(response.text, 'lxml')
+    sidebar = find_tag(soup, 'div', {'class': 'sphinxsidebarwrapper'})
     ul_tags = sidebar.find_all('ul')
 
     for ul in ul_tags:
@@ -70,6 +75,9 @@ def latest_versions(session):
 def download(session):
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     logging.info(f'Архив был загружен и сохранён: <archive_path>')
+    response = get_response(session, downloads_url)
+    if response is None:
+        return
 
 MODE_TO_FUNCTION = {
     'whats-new': whats_new,
