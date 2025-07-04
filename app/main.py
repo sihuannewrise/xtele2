@@ -32,7 +32,7 @@ def whats_new(session):
         h1 = soup.find('h1')
         h1_text = h1.text[:-1]
         dl = soup.find('dl')
-        dl_text = dl.text.replace('\n', ' ')
+        dl_text = dl.text.strip().replace('\n', ' ')
         results.append((version_link, h1_text, dl_text))
 
     return results
