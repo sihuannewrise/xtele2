@@ -8,4 +8,4 @@ DEST_RESULT_FOLDER = 'results'
 
 DEST_LOGS_FOLDER = 'logs'
 LOG_FILE_NAME = 'parser.log'
-LOG_FORMAT = '"%(asctime)s - [%(levelname)s] - %(message)s"'
+LOG_FORMAT = '%(asctime)s [%(levelname)s] %(message)s'
